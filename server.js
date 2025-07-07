@@ -5,7 +5,6 @@ const multer = require('multer');
 const mysql = require('mysql2');
 const path = require('path');
 const fs = require('fs');
-
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
