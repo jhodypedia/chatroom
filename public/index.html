@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="css/style2.css">
 </head>
 <body>
-  <!-- Modal Nama -->
   <div class="modal-backdrop show"></div>
   <div id="modalUser" class="modal show d-block">
     <div class="modal-dialog centered">
@@ -23,15 +22,15 @@
     </div>
   </div>
 
-  <!-- Kontainer Chat -->
   <div class="container">
     <aside class="sidebar">
       <h5>Online</h5>
       <ul id="userList"></ul>
     </aside>
 
-    <main class="chat-area">
+    <main class="chat-area" id="chatArea" style="display:none">
       <header class="chat-header">
+        <button id="backBtn" class="btn btn-sm btn-light d-md-none"><i class="fa fa-arrow-left"></i></button>
         <span id="chatWith"></span>
         <span id="typingStatus" class="typing"></span>
       </header>
