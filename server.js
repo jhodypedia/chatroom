@@ -1,74 +1,79 @@
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const multer = require('multer');
-const mysql = require('mysql2');
-const path = require('path');
-const fs = require('fs');
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
-const PORT = 3000;
+const express = require('express'),
+      http = require('http'),
+      socketIo = require('socket.io'),
+      multer = require('multer'),
+      mysql = require('mysql2'),
+      fs = require('fs');
 
-// Konfigurasi MySQL
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '', // sesuaikan
-  database: 'nongchat'
-});
-db.connect(err => {
-  if (err) throw err;
-  console.log("✅ Terhubung ke database MySQL.");
-});
+const app = express(),
+      server = http.createServer(app),
+      io = socketIo(server);
 
-// Buat folder upload jika belum ada
-const uploadPath = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
+const db = mysql.createConnection({ host:'localhost', user:'root', password:'', database:'nongchat' });
+db.connect();
 
-// Konfigurasi Multer
-const storage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, 'uploads/'),
-  filename: (_, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-});
-const upload = multer({ storage });
+if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
+const upload = multer({ storage: multer.diskStorage({
+  destination: ()=>'uploads/',
+  filename: (_,f,cb)=>cb(null, Date.now()+'-'+f.originalname)
+}) });
 
-// Middleware
+let onlineUsers = {};
+
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 app.use(express.json());
 
-// Ambil semua pesan dari database
 app.get('/history', (req, res) => {
-  db.query("SELECT * FROM messages ORDER BY created_at ASC", (err, rows) => {
-    if (err) return res.status(500).send(err);
-    res.json(rows);
-  });
+  const { u1,u2 } = req.query;
+  const sql = "SELECT * FROM messages WHERE (sender=? AND receiver=?) OR (sender=? AND receiver=?) ORDER BY created_at";
+  db.query(sql, [u1,u2,u2,u1], (e,rows)=>res.json(rows));
 });
 
-// Upload file
-app.post('/upload', upload.single('file'), (req, res) => {
-  const fileUrl = `/uploads/${req.file.filename}`;
-  db.query("INSERT INTO messages (username, content, type) VALUES (?, ?, 'file')", 
-    [req.body.username, fileUrl], 
-    (err) => {
-      if (err) return res.status(500).send(err);
-      res.json({ url: fileUrl, name: req.file.originalname });
+app.post('/upload', upload.single('file'), (req,res)=>{
+  const { sender, receiver } = req.body;
+  const url = `/uploads/${req.file.filename}`;
+  db.query("INSERT INTO messages (sender,receiver,content,type) VALUES (?,?,?,'file')",
+    [sender,receiver,url], (err,result)=>{
+      const msg = { id: result.insertId, sender, receiver, content:url, type:'file', created_at: new Date() };
+      io.to(sender).to(receiver).emit('new message', msg);
+      res.json({ url });
     });
 });
 
-// Socket.IO
 io.on('connection', socket => {
+  let currentUser;
+
+  socket.on('join', user => {
+    currentUser = user;
+    onlineUsers[user] = socket.id;
+    io.emit('update users', Object.keys(onlineUsers));
+    socket.join(user);
+  });
+
+  socket.on('typing', data => {
+    socket.to(data.receiver).emit('typing', data);
+  });
+
   socket.on('chat message', data => {
-    db.query("INSERT INTO messages (username, content) VALUES (?, ?)", 
-      [data.username, data.content], 
-      err => {
-        if (err) return console.error(err);
-        socket.broadcast.emit('chat message', data);
+    const { sender,receiver,content } = data;
+    db.query("INSERT INTO messages (sender,receiver,content) VALUES (?,?,?)",
+      [sender,receiver,content], (err,result)=>{
+        const msg = { id: result.insertId, sender, receiver, content, type:'text', created_at: new Date() };
+        io.to(receiver).to(sender).emit('new message', msg);
       });
+  });
+
+  socket.on('delete message', id => {
+    db.query("DELETE FROM messages WHERE id=?", [id], () => {
+      io.emit('message deleted', id);
+    });
+  });
+
+  socket.on('disconnect', () => {
+    delete onlineUsers[currentUser];
+    io.emit('update users', Object.keys(onlineUsers));
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-});
+server.listen(3000, ()=>console.log("🚀 Server ready on http://localhost:3000"));
