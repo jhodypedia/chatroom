@@ -3,12 +3,14 @@ body {
   font-family: 'Poppins', sans-serif;
   background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat, #0f0f1f;
   color: #fff;
+  height: 100vh;
   overflow: hidden;
 }
 
 .container {
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -17,6 +19,7 @@ body {
   padding: 20px;
   overflow-y: auto;
   border-right: 1px solid #333;
+  flex-shrink: 0;
 }
 
 .sidebar h5 {
@@ -47,6 +50,7 @@ body {
   display: flex;
   flex-direction: column;
   background: #1a1a2e;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -55,6 +59,7 @@ body {
   font-weight: bold;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .typing {
@@ -68,6 +73,7 @@ body {
   padding: 10px;
   overflow-y: auto;
   background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+  scroll-behavior: smooth;
 }
 
 .chat-bubble-avatar {
@@ -160,16 +166,23 @@ body {
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
+    height: auto;
   }
 
   .sidebar {
     width: 100%;
     height: auto;
-    order: 2;
+    order: 1;
   }
 
   .chat-area {
-    order: 1;
+    order: 2;
+    height: calc(100vh - 160px);
+    display: none;
+  }
+
+  .chat-area.active {
+    display: flex !important;
   }
 
   .chat-input {
