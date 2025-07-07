@@ -1,0 +1,12 @@
+body { font-family:'Poppins',sans-serif; transition: background .4s; overflow: hidden; }
+body.light-mode { background: #f4f4f4; color: #222; }
+body.dark-mode { background: #1e1e2f; color: white; }
+.sidebar { height: 100vh; background: #282845; color: white; }
+.chat-header, .chat-input { background: rgba(30, 30, 50, .9); color: white; }
+.chat-messages { overflow-y: auto; height: 70vh; }
+.message-bubble { max-width: 75%; margin-bottom: 10px; padding: 10px 15px; border-radius: 12px; word-wrap: break-word; }
+.message-bubble.me { background: #4fd1c5; color: black; margin-left: auto; text-align: right; }
+.message-bubble.you { background: #3a3a5a; color: white; text-align: left; }
+.message-time { font-size: .75rem; opacity: .7; margin-top: 4px; }
+.chat-input input { background: #2a2a40; color: white; border: none; border-radius: 8px; padding: 10px; }
+.chat-input button { background: #4fd1c5; border: none; color: black; border-radius: 50%; width: 40px; height: 40px; }
